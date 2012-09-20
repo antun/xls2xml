@@ -16,19 +16,38 @@ if cmd_folder not in sys.path:
 
 from library import xlrd
 
-def toXML(filename, node_name):
+def toXML(filename, node_name, cellsAs):
     xlsFile = xlrd.open_workbook(filename)
     firstSheet = xlsFile.sheet_by_index(0)
     attributes = firstSheet.row_values(0)
     for rownum in range(1, firstSheet.nrows):
         firstSheet.row_values(rownum) 
         cells = [ convertFloatsToIntStrings(i) for i in firstSheet.row_values(rownum) ]
-        s = "<" + node_name + " "
-        for index in range(len(attributes)):
-            s += sanitizeAttributeName(attributes[index].strip()) \
-               + "=\"" + cells[index].decode("utf-8").strip() + "\" "
-        s += "/>"
+        if (cellsAs == "attributes"):
+            s = xmlRowAsAttributes(node_name, attributes, cells, rownum)
+        elif (cellsAs == "nodes"):
+            s = xmlRowAsNodes(node_name, attributes, cells, rownum)
         print s
+
+def xmlRowAsAttributes(node_name, attributes, cells, rownum):
+    s = "<" + node_name + " "
+    for index in range(len(attributes)):
+        s += sanitizeAttributeName(attributes[index].strip()) \
+            + "=\"" + cells[index].decode("utf-8").strip() + "\" "
+    s += "/>"
+    return s
+
+def xmlRowAsNodes(node_name, attributes, cells, rownum):
+    s = "<" + node_name + ">\n"
+    rows = []
+    for index in range(len(attributes)):
+        r = "    <" + sanitizeAttributeName(attributes[index].strip())  + ">" \
+            + cells[index].decode("utf-8").strip() \
+            + "</" + sanitizeAttributeName(attributes[index].strip()) + ">\n"
+        rows.append(r)
+    s += "".join(rows)
+    s += "</" + node_name + ">"
+    return s
 
 def convertFloatsToIntStrings(i):
     if type(i) is float:
@@ -51,9 +70,10 @@ if __name__ == '__main__':
     parser.add_argument('filename', help='Excel (xls or xlsx) file.')
     parser.add_argument("-n", "--node", help="node for each table row", default="node")
     parser.add_argument("-r", "--root-node", help="wrap nodes in specified root node")
+    parser.add_argument("-c", "--cells-as", help="use attributes or nodes for cell values", default="attributes", choices=["attributes", "nodes"])
     args = parser.parse_args()
     if (args.root_node != None):
         print "<" + args.root_node + ">"
-    toXML(args.filename, args.node)
+    toXML(args.filename, args.node, args.cells_as)
     if (args.root_node != None):
         print "</" + args.root_node + ">"
