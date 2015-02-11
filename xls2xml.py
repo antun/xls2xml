@@ -17,7 +17,7 @@ if cmd_folder not in sys.path:
 from library import xlrd
 
 def toXML(filename, node_name, cellsAs):
-    xlsFile = xlrd.open_workbook(filename)
+    xlsFile = xlrd.open_workbook(filename.encode(sys.getfilesystemencoding() ))
     firstSheet = xlsFile.sheet_by_index(0)
     attributes = firstSheet.row_values(0)
     for rownum in range(1, firstSheet.nrows):
@@ -27,7 +27,7 @@ def toXML(filename, node_name, cellsAs):
             s = xmlRowAsAttributes(node_name, attributes, cells, rownum)
         elif (cellsAs == "nodes"):
             s = xmlRowAsNodes(node_name, attributes, cells, rownum)
-        print s
+        print s.encode('utf8')
 
 def xmlRowAsAttributes(node_name, attributes, cells, rownum):
     s = "<" + node_name + " "
